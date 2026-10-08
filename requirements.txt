@@ -1,0 +1,12 @@
+# Python packages needed to run this project.
+# Install with:  pip install -r requirements.txt
+pandas>=2.0
+numpy>=1.24
+pyarrow>=14.0        # fast file format for the cleaned data
+openpyxl>=3.1        # reading the sensor-location Excel sheet
+scikit-learn>=1.3    # machine-learning models
+matplotlib>=3.7      # plots
+jupyter>=1.0         # notebooks
+pytest>=7.4          # tests
+pytest-html>=4.0     # HTML test report
+pdoc>=14.0           # HTML code documentation

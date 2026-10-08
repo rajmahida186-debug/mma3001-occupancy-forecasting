@@ -1,0 +1,21 @@
+# Raw sensor data is large (~2 GB) and owned by Monash - never commit it
+data/raw/*
+!data/raw/.gitkeep
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
