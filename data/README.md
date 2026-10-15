@@ -27,11 +27,12 @@ MIT licence.
 Details and evidence go in the data-audit notebook and the report.
 
 - The file names say "May to Dec 2024", but the data actually spans 2023–2026.
-- 3 of the 5 environmental sensors are frozen: they repeat the same reading
-  thousands of times.
+- Every environmental sensor "froze" at some point (its own clock stopped while
+  records kept arriving). Three never produced valid readings; …869 was valid
+  29 Feb – 14 Jun 2024 and …326 was valid 7 Sep 2025 – 22 Apr 2026.
 - Only 2 of the 5 occupancy spaces can be matched to a room. The location
   sheet's occupancy tab is itself labelled "Incorrect Data".
-- No room has both occupancy and environmental sensors with overlapping data.
+- No valid environmental sensor is in a room with an occupancy sensor.
 - Timestamps cross daylight-saving changes, which need careful handling.
 
 ## Processed files (`processed/`)
