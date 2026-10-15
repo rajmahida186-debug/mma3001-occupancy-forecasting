@@ -44,20 +44,25 @@ conditions spaces when people are expected?*
 
 ## How to run
 
-> These steps are filled in as code is added.
-
 ```bash
 # 1. Get a copy of the repository
 git clone https://github.com/rajmahida186-debug/mma3001-occupancy-forecasting.git
 cd mma3001-occupancy-forecasting
 
-# 2. Install the required Python packages
+# 2. Install the required Python packages (Python 3.10+)
 pip install -r requirements.txt
 
 # 3. Run the tests and generate the HTML test report
 pytest --html=reports/test_report/report.html --self-contained-html
 
-# 4. Generate the HTML code documentation
+# 4. Open the notebooks (they use the small files already in data/processed/)
+jupyter notebook notebooks/
+
+# 5. (Optional) Rebuild data/processed/ from the raw Monash files
+#    Place the raw CSVs in data/raw/ first (see data/README.md). Takes ~2 minutes.
+PYTHONPATH=src python -m occupancy.pipeline
+
+# 6. Generate the HTML code documentation
 pdoc src/occupancy -o docs
 ```
 
