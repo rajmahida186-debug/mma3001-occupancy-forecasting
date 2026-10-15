@@ -4,8 +4,8 @@ Run from the repository root after placing the raw files in ``data/raw/``::
 
     python -m occupancy.pipeline
 
-(with ``src`` on the Python path, e.g. ``PYTHONPATH=src`` or after
-``pip install -e .``). Takes a few minutes, mostly reading the 1.6 GB file.
+(after ``pip install -r requirements.txt``, which installs this package).
+Takes a few minutes, mostly reading the 1.6 GB file.
 """
 
 from __future__ import annotations

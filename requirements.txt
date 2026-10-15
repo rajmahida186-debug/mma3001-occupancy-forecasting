@@ -10,3 +10,4 @@ jupyter>=1.0         # notebooks
 pytest>=7.4          # tests
 pytest-html>=4.0     # HTML test report
 pdoc>=14.0           # HTML code documentation
+-e .

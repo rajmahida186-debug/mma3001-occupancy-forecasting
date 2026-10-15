@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "occupancy"
+version = "0.2.0"
+description = "Forecasting room occupancy for HVAC scheduling (MMA3001 project, Monash University)"
+authors = [{ name = "Raj Mahida" }]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
