@@ -12,7 +12,7 @@ MIT licence.
 | Folder | Contents | In Git? |
 |---|---|---|
 | `raw/` | The original files from the unit (about 2 GB). Place them here yourself. | ❌ No: too large, and not ours to redistribute |
-| `processed/` | Small cleaned tables produced by the code (e.g. hourly occupancy) | ✅ Yes |
+| `processed/` | Small cleaned tables produced by `python -m occupancy.pipeline` | ✅ Yes |
 
 ## Raw files expected in `raw/`
 
@@ -33,3 +33,12 @@ Details and evidence go in the data-audit notebook and the report.
   sheet's occupancy tab is itself labelled "Incorrect Data".
 - No room has both occupancy and environmental sensors with overlapping data.
 - Timestamps cross daylight-saving changes, which need careful handling.
+
+## Processed files (`processed/`)
+
+| File | Contents |
+|---|---|
+| `occupancy_hourly.csv` | One row per space per hour with readings: mean/max headcount, number of readings, `is_event` flag (peak ≥ 30 people). Timestamps are local time with UTC offset. |
+| `env_sensor_health_monthly.csv` | Per environmental sensor and month: records, distinct sensor timestamps, distinct CO₂ values, working/frozen |
+| `env_sensor_valid_periods.csv` | Per environmental sensor: period with genuinely changing readings (blank = never) |
+| `env_fig3_extract.csv` | CO₂ readings for the two sensors in Figure 3 (30 Apr – 12 May 2024) |
