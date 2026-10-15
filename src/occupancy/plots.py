@@ -128,3 +128,39 @@ def frozen_vs_working(env: pd.DataFrame, working: str, frozen: str,
     ax.tick_params(axis="x", labelsize=7)
     fig.tight_layout()
     return fig
+
+
+def example_week(df: pd.DataFrame, space: str, start: str, days: int = 7) -> plt.Figure:
+    """Figure 4: one week of measured vs forecast headcount, with HVAC schedules.
+
+    Args:
+        df: Hourly rows with ``space``, ``hour``, ``mean_headcount``, a
+            ``baseline`` forecast column and a boolean ``timetable`` column.
+        space: Space to plot.
+        start: First day of the week (``YYYY-MM-DD``).
+        days: Number of days to show.
+
+    Returns:
+        Figure with headcount lines and shaded timetable "on" hours.
+    """
+    _style()
+    tz = df["hour"].dt.tz
+    t0 = pd.Timestamp(start, tz=tz)
+    d = df[(df["space"] == space) & df["hour"].between(t0, t0 + pd.Timedelta(days=days))].sort_values("hour")
+    t = d["hour"].dt.tz_localize(None)
+    fig, ax = plt.subplots(figsize=(7.2, 2.6))
+    ax.fill_between(t, 0, d["mean_headcount"].max() * 1.05, where=d["timetable"].to_numpy(),
+                    step="post", color="#f3e4d6", label="Timetable HVAC on", linewidth=0)
+    ax.plot(t, d["mean_headcount"], color=INK, lw=1.4, label="Measured")
+    ax.plot(t, d["baseline"], color=COLOURS[0], lw=1.8, label="Profile baseline forecast")
+    if "model" in d:
+        ax.plot(t, d["model"], color=COLOURS[2], lw=1.8, label="ML forecast")
+    ax.axhline(1.0, color=MUTED, lw=0.8, ls="--")
+    ax.text(t.iloc[-1], 1.05, "occupied threshold (1 person)", fontsize=7, color=MUTED, va="bottom", ha="right")
+    ax.set_ylabel("Mean headcount (people)")
+    ax.set_title(f"{space}, week from {t0:%d %b %Y}", fontsize=9.5, color=INK, loc="left")
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %d"))
+    ax.grid(axis="y", color=GRID, lw=0.8)
+    ax.legend(frameon=False, fontsize=7, loc="upper right", ncol=3)
+    fig.tight_layout()
+    return fig

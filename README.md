@@ -4,7 +4,7 @@
 **Author:** Raj Mahida
 **Dataset:** Dataset 2, Monash Smart Infrastructure Occupancy and Environmental Data
 
-> 🚧 **Work in progress.** This repository is being built up over the semester.
+> 🚧 **Work in progress.** Done: data cleaning and audit (notebook 01), baseline and timetable (notebook 02). Next: machine-learning model.
 
 ## Project question
 
@@ -49,7 +49,7 @@ conditions spaces when people are expected?*
 git clone https://github.com/rajmahida186-debug/mma3001-occupancy-forecasting.git
 cd mma3001-occupancy-forecasting
 
-# 2. Install the required Python packages (Python 3.10+)
+# 2. Install the required Python packages and this project (Python 3.10+)
 pip install -r requirements.txt
 
 # 3. Run the tests and generate the HTML test report
@@ -60,7 +60,7 @@ jupyter notebook notebooks/
 
 # 5. (Optional) Rebuild data/processed/ from the raw Monash files
 #    Place the raw CSVs in data/raw/ first (see data/README.md). Takes ~2 minutes.
-PYTHONPATH=src python -m occupancy.pipeline
+python -m occupancy.pipeline
 
 # 6. Generate the HTML code documentation
 pdoc src/occupancy -o docs
