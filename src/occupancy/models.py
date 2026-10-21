@@ -6,7 +6,8 @@ machine-learning model (added in a later stage) is compared:
 * :class:`ProfileBaseline` – a *forecast*: the historical average headcount for
   each space, weekday and hour of day ("Tuesdays at 2 pm average 2.3 people").
 * :class:`FixedTimetable` – a *schedule* with no forecast at all: HVAC on during
-  fixed hours (default 7 am–7 pm, Monday–Friday), as many buildings run today.
+  fixed hours (default 8 am–8 pm, Monday–Friday, matching scheduled class
+  hours), as many buildings run today.
 """
 
 from __future__ import annotations
@@ -68,8 +69,12 @@ class ProfileBaseline:
 class FixedTimetable:
     """Conventional HVAC timetable: on during fixed hours on chosen days.
 
-    This is an *assumed* schedule representing typical commercial practice; the
-    real Monash HVAC schedule was not supplied with the data.
+    This is an *assumed* schedule; the real Monash HVAC schedule was not
+    supplied with the data. The default 8 am–8 pm weekday window follows the
+    hours in which classes are scheduled (Monash's Student Timetable Procedure
+    permits teaching 8.00 am–9.00 pm Mon–Fri; weekday hours from 8 pm are occupied
+    less than half the time, and 8–8 performed best of the windows tested
+    on 2025 data).
 
     Args:
         start_hour: First hour of the day the system is on (inclusive).
@@ -77,7 +82,7 @@ class FixedTimetable:
         weekdays_only: If True, the system is off all weekend.
     """
 
-    def __init__(self, start_hour: int = 7, end_hour: int = 19, weekdays_only: bool = True):
+    def __init__(self, start_hour: int = 8, end_hour: int = 20, weekdays_only: bool = True):
         self.start_hour = start_hour
         self.end_hour = end_hour
         self.weekdays_only = weekdays_only

@@ -29,10 +29,16 @@ def test_baseline_falls_back_when_weekday_unseen():
     assert pred.iloc[0] == pytest.approx(4.0)
 
 
-def test_timetable_is_on_7am_to_7pm_weekdays_only():
-    df = table([("d", "Monday", 6, 0), ("d", "Monday", 7, 0), ("d", "Monday", 18, 0),
-                ("d", "Monday", 19, 0), ("d", "Saturday", 12, 0)])
+def test_timetable_is_on_8am_to_8pm_weekdays_only():
+    """Default window: 8:00 on, 19:00 still on, 20:00 off, weekends off."""
+    df = table([("d", "Monday", 7, 0), ("d", "Monday", 8, 0), ("d", "Monday", 19, 0),
+                ("d", "Monday", 20, 0), ("d", "Saturday", 12, 0)])
     assert list(FixedTimetable().schedule(df)) == [False, True, True, False, False]
+
+
+def test_timetable_window_is_adjustable():
+    df = table([("d", "Monday", 7, 0), ("d", "Monday", 19, 0)])
+    assert list(FixedTimetable(start_hour=7, end_hour=19).schedule(df)) == [True, False]
 
 
 def test_split_is_chronological_and_complete():
