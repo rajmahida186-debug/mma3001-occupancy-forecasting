@@ -4,7 +4,7 @@
 **Author:** Raj Mahida
 **Dataset:** Dataset 2, Monash Smart Infrastructure Occupancy and Environmental Data
 
-> 🚧 **Work in progress.** Done: data cleaning and audit (notebook 01), baseline and timetable (notebook 02). Next: machine-learning model.
+> 🚧 **Work in progress.** Done: data cleaning and audit (notebook 01), baseline and timetable (notebook 02), machine-learning model with final test (notebook 03). Next: robustness checks.
 
 ## Project question
 
@@ -20,10 +20,21 @@ conditions spaces when people are expected?*
 - **Output:** predicted average headcount for each space, for each hour.
 - **Baseline method:** typical profile, i.e. the historical average for each
   hour of each weekday.
-- **Main method:** a machine-learning regression model (to be selected and
-  justified).
-- **Validation:** chronological split, training on earlier data and testing
-  on later, unseen data.
+- **Main method:** a day-ahead forecast made at midnight with gradient-boosted
+  decision trees (scikit-learn `HistGradientBoostingRegressor`), using the
+  calendar, Monash semester weeks and recent occupancy.
+- **Validation:** chronological split: train before 2025, tune on 2025,
+  test once on Jan–Apr 2026.
+
+## Results so far (2026 test period, never used for training or tuning)
+
+| Approach | MAE (people) | HVAC decision correct | Wasted hours | Discomfort hours |
+|---|---|---|---|---|
+| Fixed timetable, 8am–8pm weekdays | – | 76.3% | 1,016 | 681 |
+| Profile baseline | 0.678 | 74.7% | 1,259 | 549 |
+| **Gradient boosting (ML)** | **0.581** | **79.2%** | **836** | 651 |
+
+Full tables are in `reports/results/`, and the working is in `notebooks/03_ml_model.ipynb`.
 
 ## Repository structure
 

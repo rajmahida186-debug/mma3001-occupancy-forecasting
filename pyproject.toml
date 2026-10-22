@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "occupancy"
-version = "0.2.0"
+version = "0.3.0"
 description = "Forecasting room occupancy for HVAC scheduling (MMA3001 project, Monash University)"
 authors = [{ name = "Raj Mahida" }]
 license = { text = "MIT" }
