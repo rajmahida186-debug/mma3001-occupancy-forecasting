@@ -1,4 +1,4 @@
-"""Figures for the report (audit Figures 1–3, results Figures 4–5).
+"""Figures for the report (audit Figures 1–3, results Figures 4–8).
 
 Each function takes already-processed data and returns a Matplotlib figure,
 so the same code is used by the notebook and by the report.
@@ -184,5 +184,82 @@ def example_week(df: pd.DataFrame, space: str, start: str, days: int = 7) -> plt
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %d"))
     ax.grid(axis="y", color=GRID, lw=0.8)
     ax.legend(frameon=False, fontsize=7, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=4)
+    fig.tight_layout()
+    return fig
+
+
+def monthly_mae(monthly: pd.DataFrame) -> plt.Figure:
+    """Figure 6: forecast error month by month, baseline vs ML.
+
+    Args:
+        monthly: Table indexed by month (``YYYY-MM``) with columns
+            ``Profile baseline`` and ``ML`` (MAE, people).
+
+    Returns:
+        Grouped bar chart, one pair of bars per month.
+    """
+    _style()
+    fig, ax = plt.subplots(figsize=(7.2, 2.6))
+    x = np.arange(len(monthly))
+    for i, (col, colour) in enumerate([("Profile baseline", COLOURS[0]), ("ML", COLOURS[2])]):
+        ax.bar(x + (i - 0.5) * 0.38, monthly[col], width=0.36, color=colour, label=col)
+    ax.set_xticks(x)
+    ax.set_xticklabels([pd.Timestamp(m).strftime("%b\n%y") for m in monthly.index], fontsize=7)
+    ax.set_ylabel("MAE (people)")
+    ax.grid(axis="y", color=GRID, lw=0.8)
+    ax.legend(frameon=False, fontsize=7.5, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2)
+    fig.tight_layout()
+    return fig
+
+
+def tradeoff(curves: dict[str, pd.DataFrame], points: dict[str, tuple[float, float]],
+             label_at: tuple[float, ...] = (0.5, 1.0, 1.5)) -> plt.Figure:
+    """Figure 7: wasted vs discomfort hours as the switch-on threshold changes.
+
+    Args:
+        curves: Name → output of :func:`occupancy.robustness.threshold_curve`.
+        points: Name → (wasted, discomfort) for fixed schedules (e.g. the timetable).
+        label_at: Thresholds to label along each curve.
+
+    Returns:
+        Figure; points nearer the bottom-left corner are better on both counts.
+    """
+    _style()
+    fig, ax = plt.subplots(figsize=(7.2, 3.2))
+    for (name, c), colour in zip(curves.items(), [COLOURS[0], COLOURS[2]]):
+        ax.plot(c["wasted"], c["discomfort"], "-o", color=colour, ms=3, lw=1.6, label=name)
+        for _, r in c[c["switch_on_at"].round(2).isin(label_at)].iterrows():
+            ax.annotate(f"{r['switch_on_at']:g}", (r["wasted"], r["discomfort"]),
+                        textcoords="offset points", xytext=(4, 4), fontsize=7, color=colour)
+    for name, (w, d) in points.items():
+        ax.plot(w, d, "s", color=COLOURS[1], ms=6, label=name)
+    ax.set_xlabel("Wasted hours (conditioned while empty)")
+    ax.set_ylabel("Discomfort hours\n(occupied, not conditioned)")
+    ax.grid(color=GRID, lw=0.8)
+    ax.legend(frameon=False, fontsize=7.5, loc="upper right")
+    fig.tight_layout()
+    return fig
+
+
+def bias_by_hour(bias: pd.DataFrame) -> plt.Figure:
+    """Figure 8: average forecast minus measured headcount, by hour of day.
+
+    Args:
+        bias: Table indexed by hour of day with one column per forecast.
+
+    Returns:
+        Line figure; above zero = over-forecast (wasted energy risk),
+        below zero = under-forecast (discomfort risk).
+    """
+    _style()
+    fig, ax = plt.subplots(figsize=(7.2, 2.6))
+    for col, colour in zip(bias.columns, [COLOURS[0], COLOURS[2]]):
+        ax.plot(bias.index, bias[col], color=colour, lw=1.8, label=col)
+    ax.axhline(0, color=MUTED, lw=0.8)
+    ax.set_xticks(range(0, 24, 3))
+    ax.set_xlabel("Hour of day")
+    ax.set_ylabel("Forecast − measured\n(people)")
+    ax.grid(axis="y", color=GRID, lw=0.8)
+    ax.legend(frameon=False, fontsize=7.5, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2)
     fig.tight_layout()
     return fig
