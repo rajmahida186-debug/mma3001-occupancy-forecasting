@@ -1,4 +1,4 @@
-"""Figures for the data audit (Figures 1–3 of the report).
+"""Figures for the report (audit Figures 1–3, results Figures 4–5).
 
 Each function takes already-processed data and returns a Matplotlib figure,
 so the same code is used by the notebook and by the report.
@@ -130,6 +130,28 @@ def frozen_vs_working(env: pd.DataFrame, working: str, frozen: str,
     return fig
 
 
+def feature_importance(importance: pd.DataFrame) -> plt.Figure:
+    """Figure 5: permutation importance of each model input.
+
+    Args:
+        importance: Table with columns ``feature``, ``mae_increase`` (mean
+            rise in MAE, people, when that input is shuffled) and ``std``.
+
+    Returns:
+        Horizontal bar chart, most important input at the top.
+    """
+    _style()
+    d = importance.sort_values("mae_increase")
+    fig, ax = plt.subplots(figsize=(7.2, 2.8))
+    ax.barh(d["feature"], d["mae_increase"], xerr=d["std"], color=COLOURS[2],
+            error_kw={"ecolor": MUTED, "lw": 0.8})
+    ax.set_xlabel("Increase in validation MAE when the input is shuffled (people)")
+    ax.grid(axis="x", color=GRID, lw=0.8)
+    ax.tick_params(axis="y", length=0)
+    fig.tight_layout()
+    return fig
+
+
 def example_week(df: pd.DataFrame, space: str, start: str, days: int = 7) -> plt.Figure:
     """Figure 4: one week of measured vs forecast headcount, with HVAC schedules.
 
@@ -156,11 +178,11 @@ def example_week(df: pd.DataFrame, space: str, start: str, days: int = 7) -> plt
     if "model" in d:
         ax.plot(t, d["model"], color=COLOURS[2], lw=1.8, label="ML forecast")
     ax.axhline(1.0, color=MUTED, lw=0.8, ls="--")
-    ax.text(t.iloc[-1], 1.05, "occupied threshold (1 person)", fontsize=7, color=MUTED, va="bottom", ha="right")
+    ax.text(t.iloc[0], 1.05, "occupied threshold (1 person)", fontsize=7, color=MUTED, va="bottom", ha="left")
     ax.set_ylabel("Mean headcount (people)")
-    ax.set_title(f"{space}, week from {t0:%d %b %Y}", fontsize=9.5, color=INK, loc="left")
+    ax.set_title(f"{space}, week from {t0:%d %b %Y}", fontsize=9.5, color=INK, loc="left", pad=20)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %d"))
     ax.grid(axis="y", color=GRID, lw=0.8)
-    ax.legend(frameon=False, fontsize=7, loc="upper right", ncol=3)
+    ax.legend(frameon=False, fontsize=7, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=4)
     fig.tight_layout()
     return fig

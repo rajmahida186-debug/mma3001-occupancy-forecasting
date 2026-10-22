@@ -15,6 +15,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.inspection import permutation_importance
 
 from .features import FEATURES
 
@@ -132,6 +133,28 @@ class GradientBoostingForecaster:
         """Forecast mean headcount (people, ≥ 0) for each row of ``df``."""
         pred = np.clip(self.model_.predict(self._matrix(df)), 0, None)
         return pd.Series(pred, index=df.index)
+
+    def input_importance(self, df: pd.DataFrame, target: str = "mean_headcount",
+                         n_repeats: int = 5) -> pd.DataFrame:
+        """Permutation importance: how much worse the forecast gets without each input.
+
+        Each input column is shuffled in turn (breaking its link to the
+        target) and the rise in MAE is recorded. A large rise means the model
+        relies on that input.
+
+        Args:
+            df: Rows to evaluate on (normally validation, not training, data).
+            target: Measured column.
+            n_repeats: Number of shuffles per input (results are averaged).
+
+        Returns:
+            Table with ``feature``, ``mae_increase`` (people) and ``std``.
+        """
+        res = permutation_importance(self.model_, self._matrix(df), df[target],
+                                     scoring="neg_mean_absolute_error",
+                                     n_repeats=n_repeats, random_state=0)
+        return pd.DataFrame({"feature": FEATURES, "mae_increase": res.importances_mean,
+                             "std": res.importances_std}).sort_values("mae_increase", ascending=False)
 
 
 class FixedTimetable:
