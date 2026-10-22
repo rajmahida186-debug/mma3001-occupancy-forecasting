@@ -1,0 +1,8 @@
+,seconds
+Load hourly table (CSV),0.5191653770000357
+Build model inputs,0.0945390239999142
+Fit profile baseline,0.012077069999918422
+Fit gradient boosting,1.372609668999985
+Fit random forest,17.822041291999994
+"Forecast one day, all spaces (ML)",0.009613186000024143
+Forecast whole 2026 test (ML),0.0534603790000574
