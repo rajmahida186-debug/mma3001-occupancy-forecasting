@@ -1,7 +1,7 @@
 """Forecasting models and HVAC schedules.
 
-Two simple reference solutions are defined here, against which the
-machine-learning model (added in a later stage) is compared:
+The machine-learning model, :class:`GradientBoostingForecaster`, is compared
+against two simple reference solutions:
 
 * :class:`ProfileBaseline` – a *forecast*: the historical average headcount for
   each space, weekday and hour of day ("Tuesdays at 2 pm average 2.3 people").
@@ -12,7 +12,11 @@ machine-learning model (added in a later stage) is compared:
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+from .features import FEATURES
 
 
 class ProfileBaseline:
@@ -64,6 +68,70 @@ class ProfileBaseline:
         pred = pred.fillna(pd.Series(self.by_hour_.reindex(hour_idx).to_numpy(), index=df.index))
         pred = pred.fillna(df["space"].map(self.by_space_))
         return pred
+
+
+class GradientBoostingForecaster:
+    """Day-ahead machine-learning forecast using gradient-boosted decision trees.
+
+    Gradient boosting builds many small decision trees one after another; each
+    new tree corrects the errors left by the trees before it. scikit-learn's
+    ``HistGradientBoostingRegressor`` is used because it is fast on tens of
+    thousands of rows, captures non-linear patterns and interactions (e.g.
+    "2 pm *and* semester *and* Tuesday") without manual feature design, and
+    accepts missing inputs (NaN) natively – important because sensor gaps
+    leave some lag values unknown.
+
+    Inputs are the columns in :data:`occupancy.features.FEATURES`, all known at
+    midnight before the forecast day. Forecasts are clipped at 0 people.
+
+    Args:
+        learning_rate: How much each new tree is allowed to correct (smaller =
+            slower, more cautious learning).
+        max_iter: Number of trees.
+        max_leaf_nodes: Size (complexity) of each tree.
+        min_samples_leaf: Minimum hours that must fall in each tree leaf; larger
+            values stop the model from memorising one-off events.
+        loss: ``"squared_error"`` or ``"poisson"`` (suited to non-negative counts).
+        random_state: Seed, so results are repeatable.
+
+    Attributes:
+        model_: The fitted scikit-learn estimator.
+        spaces_: Space names seen in training (fixes the category coding).
+    """
+
+    def __init__(self, learning_rate: float = 0.05, max_iter: int = 300,
+                 max_leaf_nodes: int = 31, min_samples_leaf: int = 20,
+                 loss: str = "squared_error", random_state: int = 0):
+        self.params = dict(learning_rate=learning_rate, max_iter=max_iter,
+                           max_leaf_nodes=max_leaf_nodes, min_samples_leaf=min_samples_leaf,
+                           loss=loss, random_state=random_state)
+
+    def _matrix(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Select the input columns and encode ``space`` as a fixed category."""
+        X = df[FEATURES].copy()
+        X["space"] = pd.Categorical(X["space"], categories=self.spaces_)
+        return X
+
+    def fit(self, train: pd.DataFrame, target: str = "mean_headcount") -> "GradientBoostingForecaster":
+        """Train on rows that have features (see :func:`occupancy.features.add_features`).
+
+        Args:
+            train: Training rows with every column in ``FEATURES`` and the target.
+            target: Column to forecast (people).
+
+        Returns:
+            The fitted model.
+        """
+        self.spaces_ = sorted(train["space"].unique())
+        self.model_ = HistGradientBoostingRegressor(categorical_features="from_dtype",
+                                                    early_stopping=False, **self.params)
+        self.model_.fit(self._matrix(train), train[target])
+        return self
+
+    def predict(self, df: pd.DataFrame) -> pd.Series:
+        """Forecast mean headcount (people, ≥ 0) for each row of ``df``."""
+        pred = np.clip(self.model_.predict(self._matrix(df)), 0, None)
+        return pd.Series(pred, index=df.index)
 
 
 class FixedTimetable:
