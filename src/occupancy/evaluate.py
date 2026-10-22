@@ -14,12 +14,10 @@ Space C has no data after Dec 2024, so it only appears in training.
 
 **HVAC outcome of each hour**, given an *occupied threshold* (default 1 person):
 
-======================  ==================  ==================
-\\                       Actually occupied   Actually empty
-======================  ==================  ==================
-HVAC on                 correct             **wasted** energy
-HVAC off                **discomfort**      correct (saving)
-======================  ==================  ==================
+| | Actually occupied | Actually empty |
+|---|---|---|
+| **HVAC on** | correct | **wasted** energy |
+| **HVAC off** | **discomfort** | correct (saving) |
 """
 
 from __future__ import annotations

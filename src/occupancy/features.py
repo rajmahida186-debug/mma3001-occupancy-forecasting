@@ -9,20 +9,17 @@ never "peeks" at the answer (no data leakage).
 
 Inputs built here, for target hour *h* of day *D* in a given space:
 
-=====================  =====================================================
-Column                 Meaning
-=====================  =====================================================
-``hour_of_day``        *h* (0–23)
-``weekday_num``        0 = Monday … 6 = Sunday
-``is_weekend``         1 on Saturday/Sunday, else 0
-``in_semester``        1 during Monash semester teaching weeks, else 0
-``space``              which space (categorical)
-``lag_1d``             headcount at hour *h* on day *D − 1* ("yesterday")
-``lag_7d``             headcount at hour *h* on day *D − 7* ("last week")
-``mean_4w``            mean headcount at hour *h* on days *D − 7, −14, −21,
-                       −28* (same weekday, previous four weeks)
-``yesterday_mean``     mean headcount over all hours of day *D − 1*
-=====================  =====================================================
+| Column | Meaning |
+|---|---|
+| ``hour_of_day`` | *h* (0–23) |
+| ``weekday_num`` | 0 = Monday … 6 = Sunday |
+| ``is_weekend`` | 1 on Saturday/Sunday, else 0 |
+| ``in_semester`` | 1 during Monash semester teaching weeks, else 0 |
+| ``space`` | which space (categorical) |
+| ``lag_1d`` | headcount at hour *h* on day *D − 1* ("yesterday") |
+| ``lag_7d`` | headcount at hour *h* on day *D − 7* ("last week") |
+| ``mean_4w`` | mean headcount at hour *h* on days *D − 7, −14, −21, −28* (same weekday, previous four weeks) |
+| ``yesterday_mean`` | mean headcount over all hours of day *D − 1* |
 
 Hours with no sensor readings stay missing (NaN). The gradient-boosting model
 handles missing inputs natively, so no values are invented.
