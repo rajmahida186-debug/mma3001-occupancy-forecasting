@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.inspection import permutation_importance
 
 from .features import FEATURES
@@ -71,6 +71,10 @@ class ProfileBaseline:
         return pred
 
 
+#: Settings chosen by the tuning grid in notebook 03 (lowest 2025 validation MAE).
+TUNED_SETTINGS = dict(learning_rate=0.03, max_leaf_nodes=31, min_samples_leaf=20, loss="poisson")
+
+
 class GradientBoostingForecaster:
     """Day-ahead machine-learning forecast using gradient-boosted decision trees.
 
@@ -94,6 +98,8 @@ class GradientBoostingForecaster:
             values stop the model from memorising one-off events.
         loss: ``"squared_error"`` or ``"poisson"`` (suited to non-negative counts).
         random_state: Seed, so results are repeatable.
+        features: Input columns to use (default :data:`occupancy.features.FEATURES`).
+            Changed only for robustness tests, e.g. removing inputs.
 
     Attributes:
         model_: The fitted scikit-learn estimator.
@@ -102,15 +108,18 @@ class GradientBoostingForecaster:
 
     def __init__(self, learning_rate: float = 0.05, max_iter: int = 300,
                  max_leaf_nodes: int = 31, min_samples_leaf: int = 20,
-                 loss: str = "squared_error", random_state: int = 0):
+                 loss: str = "squared_error", random_state: int = 0,
+                 features: list[str] | None = None):
         self.params = dict(learning_rate=learning_rate, max_iter=max_iter,
                            max_leaf_nodes=max_leaf_nodes, min_samples_leaf=min_samples_leaf,
                            loss=loss, random_state=random_state)
+        self.features = list(features) if features is not None else list(FEATURES)
 
     def _matrix(self, df: pd.DataFrame) -> pd.DataFrame:
         """Select the input columns and encode ``space`` as a fixed category."""
-        X = df[FEATURES].copy()
-        X["space"] = pd.Categorical(X["space"], categories=self.spaces_)
+        X = df[self.features].copy()
+        if "space" in X:
+            X["space"] = pd.Categorical(X["space"], categories=self.spaces_)
         return X
 
     def fit(self, train: pd.DataFrame, target: str = "mean_headcount") -> "GradientBoostingForecaster":
@@ -153,8 +162,44 @@ class GradientBoostingForecaster:
         res = permutation_importance(self.model_, self._matrix(df), df[target],
                                      scoring="neg_mean_absolute_error",
                                      n_repeats=n_repeats, random_state=0)
-        return pd.DataFrame({"feature": FEATURES, "mae_increase": res.importances_mean,
+        return pd.DataFrame({"feature": self.features, "mae_increase": res.importances_mean,
                              "std": res.importances_std}).sort_values("mae_increase", ascending=False)
+
+
+class RandomForestForecaster(GradientBoostingForecaster):
+    """Alternative ML model: a random forest (used only as a comparison).
+
+    A random forest grows many deep decision trees *independently*, each on a
+    random resample of the training hours, and averages them. Unlike boosting,
+    the trees do not correct each other. Randomness means results vary
+    slightly with the seed. Takes the same inputs as
+    :class:`GradientBoostingForecaster`; ``space`` is coded as a number.
+
+    Args:
+        n_estimators: Number of trees.
+        min_samples_leaf: Minimum hours per leaf.
+        random_state: Seed for the random resampling.
+        features: Input columns (default :data:`occupancy.features.FEATURES`).
+    """
+
+    def __init__(self, n_estimators: int = 200, min_samples_leaf: int = 10,
+                 random_state: int = 0, features: list[str] | None = None):
+        self.params = dict(n_estimators=n_estimators, min_samples_leaf=min_samples_leaf,
+                           random_state=random_state, n_jobs=-1)
+        self.features = list(features) if features is not None else list(FEATURES)
+
+    def _matrix(self, df: pd.DataFrame) -> pd.DataFrame:
+        X = super()._matrix(df)
+        if "space" in X:
+            X["space"] = X["space"].cat.codes  # random forest needs numbers
+        return X
+
+    def fit(self, train: pd.DataFrame, target: str = "mean_headcount") -> "RandomForestForecaster":
+        """Train the forest (same interface as the gradient-boosting model)."""
+        self.spaces_ = sorted(train["space"].unique())
+        self.model_ = RandomForestRegressor(**self.params)
+        self.model_.fit(self._matrix(train), train[target])
+        return self
 
 
 class FixedTimetable:
