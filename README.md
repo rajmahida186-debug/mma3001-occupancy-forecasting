@@ -4,7 +4,7 @@
 **Author:** Raj Mahida
 **Dataset:** Dataset 2, Monash Smart Infrastructure Occupancy and Environmental Data
 
-> 🚧 **Work in progress.** Done: data cleaning and audit (notebook 01), baseline and timetable (notebook 02), machine-learning model with final test (notebook 03). Next: robustness checks.
+> 🚧 **Work in progress.** Done: data cleaning and audit (notebook 01), baseline and timetable (notebook 02), machine-learning model with final test (notebook 03), robustness checks (notebook 04). Next: final documentation (test report, HTML docs).
 
 ## Project question
 
@@ -35,6 +35,12 @@ conditions spaces when people are expected?*
 | **Gradient boosting (ML)** | **0.581** | **79.2%** | **836** | 651 |
 
 Full tables are in `reports/results/`, and the working is in `notebooks/03_ml_model.ipynb`.
+
+**Robustness (notebook 04):** the gain over the baseline is not luck (bootstrap
+95% interval for the MAE difference −0.12 to −0.08 people in 2026), holds in all
+16 months and under monthly retraining, and is largest outside semester. Recent
+occupancy is the input that matters most. Any switch-on threshold gives fewer
+wasted *and* discomfort hours than the baseline at the same setting.
 
 ## Repository structure
 
