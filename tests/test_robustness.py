@@ -6,7 +6,7 @@ import pytest
 
 from occupancy import features, robustness
 from occupancy.config import LOCAL_TZ
-from occupancy.models import GradientBoostingForecaster, RandomForestForecaster
+from occupancy.models import GradientBoostingForecaster, LinearRegressionForecaster, RandomForestForecaster
 
 from test_features_ml import make_hourly
 
@@ -102,3 +102,21 @@ def test_random_forest_handles_missing_inputs_and_is_non_negative():
     m = RandomForestForecaster(n_estimators=20).fit(f)
     pred = m.predict(f)
     assert pred.notna().all() and (pred >= 0).all()
+
+
+def test_linear_regression_recovers_an_hourly_pattern_and_handles_gaps():
+    f = features.add_features(make_hourly(days=40, value=lambda d, h: 3.0 if 9 <= h < 17 else 0.0))
+    test = f.tail(24).copy()
+    test[["lag_1d", "lag_7d"]] = np.nan
+    pred = LinearRegressionForecaster().fit(f).predict(test)
+    assert pred.notna().all() and (pred >= 0).all()
+    busy = test.hour_of_day.between(9, 16)
+    assert pred[busy].mean() > 2 and pred[~busy].mean() < 1
+
+
+def test_fit_cost_reports_time_memory_and_size():
+    from occupancy.models import ProfileBaseline
+    f = features.add_features(make_hourly(days=10))
+    cost = robustness.fit_cost(ProfileBaseline, f, f.tail(24), repeats=2)
+    assert set(cost) == {"fit_seconds", "forecast_one_day_seconds", "training_memory_mb", "stored_model_mb"}
+    assert cost["fit_seconds"] >= 0 and cost["stored_model_mb"] > 0

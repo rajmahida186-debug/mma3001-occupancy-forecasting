@@ -15,7 +15,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.compose import make_column_transformer
+from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 from .features import FEATURES
 
@@ -200,6 +205,39 @@ class RandomForestForecaster(GradientBoostingForecaster):
         self.model_ = RandomForestRegressor(**self.params)
         self.model_.fit(self._matrix(train), train[target])
         return self
+
+
+class LinearRegressionForecaster:
+    """Alternative ML model: ordinary least-squares linear regression (comparison only).
+
+    The forecast is a weighted sum of the inputs. Space, hour of day and weekday
+    are one-hot encoded (one yes/no column per value), so each hour and weekday
+    gets its own fixed offset; but the model cannot learn *interactions* (e.g.
+    "2 pm matters more on semester weekdays") unless they are added by hand.
+    Missing recent-occupancy values are filled with the training mean, and an
+    extra yes/no column records that the value was missing. Forecasts are
+    clipped at 0 people.
+
+    Attributes:
+        model_: The fitted scikit-learn pipeline.
+    """
+
+    categorical = ["space", "hour_of_day", "weekday_num"]
+    numeric = ["in_semester", "lag_1d", "lag_7d", "mean_4w", "yesterday_mean"]
+
+    def fit(self, train: pd.DataFrame, target: str = "mean_headcount") -> "LinearRegressionForecaster":
+        """Fit the regression weights by least squares."""
+        encode = make_column_transformer(
+            (OneHotEncoder(handle_unknown="ignore"), self.categorical),
+            (SimpleImputer(strategy="mean", add_indicator=True), self.numeric))
+        self.model_ = make_pipeline(encode, LinearRegression())
+        self.model_.fit(train[self.categorical + self.numeric], train[target])
+        return self
+
+    def predict(self, df: pd.DataFrame) -> pd.Series:
+        """Forecast mean headcount (people, ≥ 0) for each row of ``df``."""
+        pred = self.model_.predict(df[self.categorical + self.numeric])
+        return pd.Series(np.clip(pred, 0, None), index=df.index)
 
 
 class FixedTimetable:

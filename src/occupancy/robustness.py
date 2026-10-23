@@ -13,10 +13,16 @@ Each function answers one question used in notebook 04:
 * :func:`add_hour_ahead_lag` – how much better is a forecast made only one
   hour ahead?
 * :func:`public_holidays` – which days are Victorian public holidays?
+* :func:`fit_cost` – how long does a model take to train and forecast, and how
+  much memory does it need?
 """
 
 from __future__ import annotations
 
+import pickle
+import time
+from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 from typing import Callable
 
 import holidays
@@ -181,3 +187,53 @@ def public_holidays(dates: pd.Series) -> pd.Series:
     years = sorted({int(d[:4]) for d in dates.unique()})
     vic = holidays.Australia(subdiv="VIC", years=years)
     return dates.isin({d.strftime("%Y-%m-%d") for d in vic})
+
+
+def _memory_kb(field: str) -> int:
+    """Read a memory figure (kB) for this process from /proc (Linux)."""
+    with open("/proc/self/status") as f:
+        for line in f:
+            if line.startswith(field + ":"):
+                return int(line.split()[1])
+    raise KeyError(field)
+
+
+def _cost_worker(make_model, train, forecast_rows, repeats):
+    """Run in a fresh process so memory use is not mixed up with earlier models."""
+    with open("/proc/self/clear_refs", "w") as f:   # reset the peak-memory counter (Linux)
+        f.write("5")
+    before = _memory_kb("VmRSS")
+    t = time.perf_counter()
+    model = make_model().fit(train)
+    fit_s = time.perf_counter() - t
+    peak_mb = (_memory_kb("VmHWM") - before) / 1024
+    t = time.perf_counter()
+    for _ in range(repeats):
+        model.predict(forecast_rows)
+    predict_s = (time.perf_counter() - t) / repeats
+    return {"fit_seconds": fit_s, "forecast_one_day_seconds": predict_s,
+            "training_memory_mb": peak_mb, "stored_model_mb": len(pickle.dumps(model)) / 1024 ** 2}
+
+
+def fit_cost(make_model: Callable[[], object], train: pd.DataFrame,
+             forecast_rows: pd.DataFrame, repeats: int = 20) -> dict[str, float]:
+    """Measure training time, forecast time and memory for one model.
+
+    Training happens in a separate, fresh Python process, so the memory figure
+    is the extra peak memory needed while training that model alone, read from
+    ``/proc`` (Linux only).
+
+    Args:
+        make_model: Picklable function returning an unfitted model
+            (e.g. a class, or ``functools.partial`` of one).
+        train: Training rows.
+        forecast_rows: Rows to forecast when timing prediction (e.g. one day).
+        repeats: Number of forecasts averaged for the timing.
+
+    Returns:
+        Dict with ``fit_seconds``, ``forecast_one_day_seconds``,
+        ``training_memory_mb`` (extra peak memory while training) and
+        ``stored_model_mb`` (size of the saved model).
+    """
+    with ProcessPoolExecutor(max_workers=1, mp_context=get_context("spawn")) as pool:
+        return pool.submit(_cost_worker, make_model, train, forecast_rows, repeats).result()
