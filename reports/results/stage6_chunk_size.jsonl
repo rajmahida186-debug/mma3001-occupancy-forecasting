@@ -1,0 +1,3 @@
+{"chunk_rows": 500000, "seconds": 37.3, "peak_memory_mb": 456, "hourly_rows": 60988}
+{"chunk_rows": 2000000, "seconds": 37.3, "peak_memory_mb": 1369, "hourly_rows": 60988}
+{"chunk_rows": 9200000, "seconds": 32.6, "peak_memory_mb": 2939, "hourly_rows": 60988}

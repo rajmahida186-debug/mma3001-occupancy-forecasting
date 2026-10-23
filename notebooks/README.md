@@ -10,3 +10,4 @@ and calls the reusable functions in `src/occupancy/`.
 | `03_ml_model.ipynb` | Day-ahead gradient-boosting forecast: tuning on 2025, comparison with both references, final 2026 test, input importance, forecast export | Done |
 | `04_robustness.ipynb` | Robustness checks: bootstrap, per month, walk-forward, random forest and seeds, input removal, threshold trade-off, training amount, unseen room, error analysis, missing-as-empty, hour-ahead, timing and profiling | Done |
 | `05_method_comparison.ipynb` | Every approach compared on the brief's criteria: accuracy, robustness, time, memory, scalability, interpretability | Done |
+| `06_optimisation_and_performance.ipynb` | Optimisation and performance: profiler, faster timestamp parsing, memory vs chunk size, exact vs histogram boosting, bins, trees, repeatability, FLOPs | Done |

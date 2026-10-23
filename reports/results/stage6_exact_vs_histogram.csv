@@ -1,0 +1,4 @@
+version,fit_seconds,validation_mae,speed-up vs exact
+"Exact splits (original algorithm), squared error",11.000604217000046,0.6031863924393364,1.0
+"Histogram (≤255 bins), squared error",1.208089533999896,0.6088547820094581,9.105785546024764
+Histogram + Poisson loss (selected),1.3886424350000652,0.5946008912318991,7.921840741529355
