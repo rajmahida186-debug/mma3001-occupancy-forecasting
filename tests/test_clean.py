@@ -119,3 +119,19 @@ def test_save_and_load_round_trip(tmp_path):
 def test_missing_raw_file_gives_clear_error(tmp_path):
     with pytest.raises(FileNotFoundError):
         clean.build_hourly_occupancy(tmp_path / "does_not_exist.csv")
+
+
+def test_fast_and_general_timestamp_parsing_agree():
+    """The fast parser must give exactly the same instants as the general one."""
+    ts = pd.Series(["2024-05-14 13:02:10+10", "2025-04-06 02:30:00+11", "2025-04-06 02:30:00+10",
+                    "2024-10-06 03:15:59+11", "2023-11-24 00:36:52+11"])
+    assert clean.parse_utc_fast(ts).equals(clean.parse_utc_general(ts))
+
+
+def test_other_timestamp_layouts_fall_back_to_the_general_parser():
+    """Fractional seconds or a ``+10:00`` offset are not the fast layout but still work."""
+    ts = pd.Series(["2024-05-14 13:02:10.5+10", "2024-05-14 13:59:59+10:00"])
+    with pytest.raises(ValueError):
+        clean.parse_utc_fast(ts)
+    out = clean.to_local_hour(ts)
+    assert (out.dt.hour == 13).all()

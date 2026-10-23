@@ -51,8 +51,42 @@ def to_local_hour(timestamps: pd.Series, tz: str = LOCAL_TZ) -> pd.Series:
     Raises:
         ValueError: If any timestamp cannot be parsed.
     """
-    utc = pd.to_datetime(timestamps, utc=True, format="mixed")
+    try:
+        utc = parse_utc_fast(timestamps)
+    except (ValueError, TypeError, AttributeError):
+        utc = parse_utc_general(timestamps)   # any other format: slower but flexible
     return utc.dt.floor("h").dt.tz_convert(tz)
+
+
+def parse_utc_general(timestamps: pd.Series) -> pd.Series:
+    """Parse timestamps of any format to UTC (the original, general method).
+
+    pandas has to work out each value's format and offset separately, which is
+    slow on millions of rows: profiling showed it took about half of the total
+    cleaning time.
+
+    Raises:
+        ValueError: If any timestamp cannot be parsed.
+    """
+    return pd.to_datetime(timestamps, utc=True, format="mixed")
+
+
+def parse_utc_fast(timestamps: pd.Series) -> pd.Series:
+    """Parse ``"YYYY-MM-DD HH:MM:SS+HH"`` strings to UTC quickly.
+
+    The raw file always uses this layout. The first 19 characters (local date
+    and time) are parsed with a fixed format, which pandas does in fast
+    compiled code; the last characters are the whole-hour UTC offset (``+10`` or
+    ``+11``), which is subtracted. About 8x faster than
+    :func:`parse_utc_general` with identical results.
+
+    Raises:
+        ValueError: If any value does not have exactly this layout, so the
+            caller can fall back to :func:`parse_utc_general`.
+    """
+    local = pd.to_datetime(timestamps.str.slice(0, 19), format="%Y-%m-%d %H:%M:%S")
+    offset_hours = timestamps.str.slice(19).astype("int64")   # fails on "+10:30", ".5+10", etc.
+    return (local - pd.to_timedelta(offset_hours, unit="h")).dt.tz_localize("UTC")
 
 
 def drop_duplicate_events(events: pd.DataFrame) -> pd.DataFrame:
@@ -150,13 +184,14 @@ def flag_events(hourly: pd.DataFrame, threshold: int = EVENT_HEADCOUNT_THRESHOLD
     return out
 
 
-def build_hourly_occupancy(raw_csv: str | Path, chunksize: int = 2_000_000) -> pd.DataFrame:
+def build_hourly_occupancy(raw_csv: str | Path, chunksize: int = 500_000) -> pd.DataFrame:
     """Run the full cleaning pipeline on the raw occupancy file.
 
     Args:
         raw_csv: Path to ``5occupancySensor_MayToDec2024_9MRows.csv``.
-        chunksize: Number of rows read at a time (lower this on low-memory
-            machines).
+        chunksize: Number of rows read at a time. 500,000 keeps peak memory
+            near 0.5 GB with no loss of speed (2 million rows used 1.4 GB, the
+            whole file at once 2.9 GB; see notebook 06).
 
     Returns:
         Hourly table with one row per space per hour that had at least one

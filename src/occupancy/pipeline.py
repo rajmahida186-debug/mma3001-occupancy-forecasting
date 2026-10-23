@@ -5,7 +5,7 @@ Run from the repository root after placing the raw files in ``data/raw/``::
     python -m occupancy.pipeline
 
 (after ``pip install -r requirements.txt``, which installs this package).
-Takes a few minutes, mostly reading the 1.6 GB file.
+Takes about a minute (about 40 s for the 1.6 GB occupancy file).
 """
 
 from __future__ import annotations
