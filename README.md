@@ -4,7 +4,7 @@
 **Author:** Raj Mahida
 **Dataset:** Dataset 2, Monash Smart Infrastructure Occupancy and Environmental Data
 
-**Status:** code complete. Notebooks 01–04 run end to end; 49 tests pass
+**Status:** code complete. Notebooks 01–05 run end to end; 51 tests pass
 ([test report](reports/test_report/report.html)); code documentation in
 [`docs/`](docs/index.html).
 
@@ -91,7 +91,7 @@ pdoc src/occupancy -o docs --docformat google
 ```
 raw sensor events (9.1 M rows)  →  clean.py: hourly table per space (DST-safe, duplicates removed, gaps kept as missing)
                                 →  features.py: inputs known at midnight (calendar, semester, recent occupancy)
-                                →  models.py: profile baseline | gradient boosting (ML) | fixed timetable
+                                →  models.py: profile baseline | gradient boosting (ML) | fixed timetable | linear regression & random forest (comparison)
                                 →  evaluate.py: MAE/RMSE + wasted/discomfort hours, chronological split
                                 →  robustness.py: bootstrap, walk-forward, thresholds, other checks
 ```
@@ -102,6 +102,7 @@ raw sensor events (9.1 M rows)  →  clean.py: hourly table per space (DST-safe,
 | `02_baseline_and_timetable` | The two reference solutions and the occupied threshold |
 | `03_ml_model` | ML model, tuning, final 2026 test, input importance (Figures 4–5) |
 | `04_robustness` | 12 robustness checks and runtime analysis (Figures 6–8) |
+| `05_method_comparison` | All approaches (incl. linear regression, random forest) compared on accuracy, robustness, time, memory, scalability and interpretability |
 
 ## Data
 
