@@ -4,7 +4,7 @@
 **Author:** Raj Mahida
 **Dataset:** Dataset 2, Monash Smart Infrastructure Occupancy and Environmental Data
 
-**Status:** code complete. Notebooks 01–05 run end to end; 51 tests pass
+**Status:** code complete. Notebooks 01–06 run end to end; 53 tests pass
 ([test report](reports/test_report/report.html)); code documentation in
 [`docs/`](docs/index.html).
 
@@ -79,7 +79,7 @@ pytest --html=reports/test_report/report.html --self-contained-html
 jupyter notebook notebooks/
 
 # 5. (Optional) Rebuild data/processed/ from the raw Monash files
-#    Place the raw CSVs in data/raw/ first (see data/README.md). Takes ~2 minutes.
+#    Place the raw CSVs in data/raw/ first (see data/README.md). Takes under a minute.
 python -m occupancy.pipeline
 
 # 6. Generate the HTML code documentation
@@ -89,7 +89,7 @@ pdoc src/occupancy -o docs --docformat google
 ## Workflow
 
 ```
-raw sensor events (9.1 M rows)  →  clean.py: hourly table per space (DST-safe, duplicates removed, gaps kept as missing)
+raw sensor events (9.1 M rows)  →  clean.py: hourly table per space (DST-safe, duplicates removed, gaps kept as missing; ~40 s, 0.5 GB)
                                 →  features.py: inputs known at midnight (calendar, semester, recent occupancy)
                                 →  models.py: profile baseline | gradient boosting (ML) | fixed timetable | linear regression & random forest (comparison)
                                 →  evaluate.py: MAE/RMSE + wasted/discomfort hours, chronological split
@@ -103,6 +103,7 @@ raw sensor events (9.1 M rows)  →  clean.py: hourly table per space (DST-safe,
 | `03_ml_model` | ML model, tuning, final 2026 test, input importance (Figures 4–5) |
 | `04_robustness` | 12 robustness checks and runtime analysis (Figures 6–8) |
 | `05_method_comparison` | All approaches (incl. linear regression, random forest) compared on accuracy, robustness, time, memory, scalability and interpretability |
+| `06_optimisation_and_performance` | Profiling and speeding up the pipeline, exact vs histogram boosting, bins, trees, repeatability, FLOP estimates |
 
 ## Data
 
